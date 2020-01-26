@@ -23,113 +23,118 @@ const double screen_distance = 0.2f;
 constexpr float FLOAT_INFINITY = std::numeric_limits<float>::max();
 
 int InitWindow(std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT >& pix_data, GLFWwindow** window) {
-	// GLFWÇÃèâä˙âª
-	if (!glfwInit()) {
-		return 0;
-	}
+  // GLFW„ÅÆÂàùÊúüÂåñ
+  if (!glfwInit()) {
+    return 0;
+  }
 
-	// ÉEÉCÉìÉhÉEÇÃçÏê¨
-	GLFWmonitor* monitorTarget;
-	if (!fullScreen)
-		monitorTarget = NULL;
-	else
-		monitorTarget = glfwGetPrimaryMonitor();
+  // „Ç¶„Ç§„É≥„Éâ„Ç¶„ÅÆ‰ΩúÊàê
+  GLFWmonitor* monitorTarget;
+  if (!fullScreen)
+    monitorTarget = NULL;
+  else
+    monitorTarget = glfwGetPrimaryMonitor();
 
 
-	*window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Tetris", monitorTarget, NULL);
-	if (!window) {
-		glfwTerminate();
-		return 0;
-	}
-	glfwMakeContextCurrent(*window);
-	glfwSwapInterval(1);
+  *window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "RayTracing", monitorTarget, NULL);
+  if (!window) {
+    glfwTerminate();
+    return 0;
+  }
+  glfwMakeContextCurrent(*window);
+  glfwSwapInterval(1);
 
-	return 1;
+  return 1;
 }
 
 void UpdateWindow(std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT >& pix_data, GLFWwindow** window) {
-	glClear(GL_COLOR_BUFFER_BIT);
-	glDrawPixels(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, &pix_data[0]);
-	glfwSwapBuffers(*window);
-	glfwPollEvents();
+  glClear(GL_COLOR_BUFFER_BIT);
+  glDrawPixels(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, &pix_data[0]);
+  glfwSwapBuffers(*window);
+  glfwPollEvents();
 }
 
 float hit_sphere(const vec3& center, float radius, const ray& r) {
-	vec3 oc = r.origin() - center;
-	float a = dot(r.direction(), r.direction());
-	float b = 2.0 * dot(oc, r.direction());
-	float c = dot(oc, oc) - radius * radius;
-	float discriminant = b * b - 4 * a * c;
-	if (discriminant < 0) {
-		return -1.0;
-	} else {
-		return (-b - sqrt(discriminant)) / (2.0 * a);
-	}
+  vec3 oc = r.origin() - center;
+  float a = dot(r.direction(), r.direction());
+  float b = 2.0 * dot(oc, r.direction());
+  float c = dot(oc, oc) - radius * radius;
+  float discriminant = b * b - 4 * a * c;
+  if (discriminant < 0) {
+    return -1.0;
+  } else {
+    return (-b - sqrt(discriminant)) / (2.0 * a);
+  }
 }
 
-vec3 random_in_unit_sphere() {
-	vec3 p;
-	do {
-		p = 2.0 * vec3(random_double(), random_double(), random_double()) - vec3(1, 1, 1);
-	} while (p.squared_length() >= 1.0);
-	return p;
-}
-
-vec3 color(const ray& r, hittable* world) {
-	hit_record rec;
-	if (world->hit(r, 0.0, std::numeric_limits<float>::max(), rec)) {
-		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-		return 0.5 * color(ray(rec.p, target - rec.p), world);
-	} else {
-		vec3 unit_direction = unit_vector(r.direction());
-		float t = 0.5 * (unit_direction.y() + 1.0);
-		return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
-	}
+vec3 color(const ray& r, hittable* world, int depth) {
+  hit_record rec;
+  if (world->hit(r, 0.001, std::numeric_limits<float>::max(), rec)) {
+    ray scattered;
+    vec3 attenuation;
+    if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+      return attenuation * color(scattered, world, depth + 1);
+    } else {
+      return vec3(0, 0, 0);
+    }
+  } else {
+    vec3 unit_direction = unit_vector(r.direction());
+    float t = 0.5 * (unit_direction.y() + 1.0);
+    return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
+  }
 }
 
 int main() {
-	std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT> pix_data{};
-	GLFWwindow* glfWindowp = nullptr;
-	GLFWwindow** glfwWindowpp = &glfWindowp;
-	InitWindow(pix_data, glfwWindowpp);
+  std::array<vec3, WINDOW_WIDTH * WINDOW_HEIGHT> pix_data{};
+  std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT> pix_data_sqrt{};
+  GLFWwindow* glfWindowp = nullptr;
+  GLFWwindow** glfwWindowpp = &glfWindowp;
+  InitWindow(pix_data_sqrt, glfwWindowpp);
 
-	std::chrono::system_clock::time_point p = std::chrono::system_clock::now();
+  std::chrono::system_clock::time_point p = std::chrono::system_clock::now();
 
-	const int ns = 10;
-	camera cam; 
+  const int ns = 5;
+  int samples = 0;
+  camera cam;
+  hittable* list[5];
+  list[0] = new sphere(vec3(0, 0, -1), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
+  list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
+  list[2] = new sphere(vec3(1, 0, -1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.7));
+  list[3] = new sphere(vec3(-1, 0, -1), 0.5, new metal(vec3(1.0, 1.0, 1.0), 0.0));
+  list[4] = new sphere(vec3(0, 0, 1), 0.5, new metal(vec3(1.0, 1.0, 1.0), 0.0));
+  hittable* world = new hittable_list(list, 5);
 
-	hittable* list[2];
-	list[0] = new sphere(vec3(0, 0, -1), 0.5);
-	list[1] = new sphere(vec3(0, -100.5, -1), 100);
-	hittable* world = new hittable_list(list, 2);
-
-	while (!glfwWindowShouldClose(*glfwWindowpp)) {
-		p = std::chrono::system_clock::now();
-
-		for (int y = 0; y < WINDOW_HEIGHT; ++y) {
+  while (!glfwWindowShouldClose(*glfwWindowpp)) {
+    p = std::chrono::system_clock::now();
+    samples += ns;
+    std::cout << samples << "samples" << std::endl;
+    for (int y = 0; y < WINDOW_HEIGHT; ++y) {
 #pragma omp parallel for
-			for (int x = 0; x < WINDOW_WIDTH; ++x) {
-				int index = x + y * WINDOW_WIDTH;
-				vec3 col(0,0,0);
-				for (int s = 0; s < ns; s++) {
-					float u = float(x + random_double()) / float(WINDOW_WIDTH);
-					float v = float(y + random_double()) / float(WINDOW_HEIGHT);
-					ray r = cam.get_ray(u, v);
-					col += color(r, world);
-				}
-				col /= float(ns);
-				
-				pix_data[index].r = int(255.99 * col[0]);
-				pix_data[index].g = int(255.99 * col[1]);
-				pix_data[index].b = int(255.99 * col[2]);
-			}
-		}
+      for (int x = 0; x < WINDOW_WIDTH; ++x) {
+        int index = x + y * WINDOW_WIDTH;
+        vec3 col(0, 0, 0);
+        for (int s = 0; s < ns; s++) {
+          float u = float(x + random_double()) / float(WINDOW_WIDTH);
+          float v = float(y + random_double()) / float(WINDOW_HEIGHT);
+          ray r = cam.get_ray(u, v);
+          col += color(r, world, 0);
+        }
+        const int samples_n = samples / ns;
+        pix_data[index][0] = 1.0 * (samples_n - 1) / samples_n * pix_data[index][0] + 1.0 / samples_n / ns * col[0];
+        pix_data[index][1] = 1.0 * (samples_n - 1) / samples_n * pix_data[index][1] + 1.0 / samples_n / ns * col[1];
+        pix_data[index][2] = 1.0 * (samples_n - 1) / samples_n * pix_data[index][2] + 1.0 / samples_n / ns * col[2];
 
-		UpdateWindow(pix_data, glfwWindowpp);
+        pix_data_sqrt[index].r = (int)(255.99 * sqrt(pix_data[index][0]));
+        pix_data_sqrt[index].g = (int)(255.99 * sqrt(pix_data[index][1]));
+        pix_data_sqrt[index].b = (int)(255.99 * sqrt(pix_data[index][2]));
+      }
+    }
 
-		const float dtMS = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - p).count());
-		std::cout << dtMS << "ms (" << (int)(1000.0 / dtMS) << "FPS)" << std::endl;
-	}
+    UpdateWindow(pix_data_sqrt, glfwWindowpp);
 
-	return 0;
+    const float dtMS = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - p).count());
+    std::cout << dtMS << "ms (" << (int)(1000.0 / dtMS) << "FPS)" << std::endl;
+  }
+
+  return 0;
 }
