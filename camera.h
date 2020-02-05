@@ -36,7 +36,7 @@ public:
 	ray get_ray(float s, float t) {
 		vec3 rd = lens_radius * random_in_unit_disk();
 		vec3 offset = u * rd.x() + v * rd.y();
-		//焦点があっている場合はベクトルの原点をずらしても(方向ベクトルは変えず)同じオブジェクトにあたる
+		//焦点があっている場合はベクトルの原点をずらしても(方向ベクトルの"ノルム"は同じ座標を指すように)同じオブジェクトにあたる
 		return ray(origin + offset, lower_left_corner + s * horizontal + t * vertical - origin - offset);
 	}
 
