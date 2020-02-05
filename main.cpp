@@ -14,7 +14,8 @@
 #include "camera.h"
 #include "random.h"
 
-constexpr double g_size = 1.0; // = 960x540
+constexpr double g_size = 0.5; // = 960x540
+constexpr double g_expand = 6.0;
 constexpr int WINDOW_WIDTH = 960 * g_size;
 constexpr int WINDOW_HEIGHT = 540 * g_size;
 constexpr int fullScreen = false;
@@ -22,7 +23,7 @@ const double screen_distance = 0.2f;
 
 constexpr float FLOAT_INFINITY = std::numeric_limits<float>::max();
 
-int InitWindow(std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT >& pix_data, GLFWwindow** window) {
+int InitWindow(std::array<RGBA, (int)(WINDOW_WIDTH * WINDOW_HEIGHT * g_expand*g_expand)>& pix_data, GLFWwindow** window) {
   // GLFWの初期化
   if (!glfwInit()) {
     return 0;
@@ -36,7 +37,7 @@ int InitWindow(std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT >& pix_data, GLFWwi
     monitorTarget = glfwGetPrimaryMonitor();
 
 
-  *window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "RayTracing", monitorTarget, NULL);
+  *window = glfwCreateWindow(WINDOW_WIDTH*g_expand, WINDOW_HEIGHT*g_expand, "RayTracing", monitorTarget, NULL);
   if (!window) {
     glfwTerminate();
     return 0;
@@ -47,9 +48,9 @@ int InitWindow(std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT >& pix_data, GLFWwi
   return 1;
 }
 
-void UpdateWindow(std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT >& pix_data, GLFWwindow** window) {
+void UpdateWindow(std::array<RGBA, (int)(WINDOW_WIDTH * WINDOW_HEIGHT*g_expand*g_expand) >& pix_data, GLFWwindow** window) {
   glClear(GL_COLOR_BUFFER_BIT);
-  glDrawPixels(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, &pix_data[0]);
+  glDrawPixels(WINDOW_WIDTH*g_expand, WINDOW_HEIGHT*g_expand, GL_RGBA, GL_UNSIGNED_BYTE, &pix_data[0]);
   glfwSwapBuffers(*window);
   glfwPollEvents();
 }
@@ -87,15 +88,21 @@ vec3 color(const ray& r, hittable* world, int depth) {
 int main() {
   std::array<vec3, WINDOW_WIDTH * WINDOW_HEIGHT> pix_data{};
   std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT> pix_data_sqrt{};
+  std::array<RGBA, (int)(WINDOW_WIDTH * WINDOW_HEIGHT * g_expand * g_expand)> pix_data_expand{};
   GLFWwindow* glfWindowp = nullptr;
   GLFWwindow** glfwWindowpp = &glfWindowp;
-  InitWindow(pix_data_sqrt, glfwWindowpp);
+  InitWindow(pix_data_expand, glfwWindowpp);
 
   std::chrono::system_clock::time_point p = std::chrono::system_clock::now();
 
   const int ns = 5;
   int samples = 0;
-  camera cam;
+  vec3 lookfrom(3, 3, 2);
+  vec3 lookat(0, 0, -1);
+  float dist_to_focus = (lookfrom - lookat).length();
+  float aperture = 2.0;
+
+  camera cam(lookfrom, lookat, vec3(0, 1, 0), 20,float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture, dist_to_focus);
   hittable* list[5];
   list[0] = new sphere(vec3(0, 0, -1), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
   list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
@@ -130,7 +137,14 @@ int main() {
       }
     }
 
-    UpdateWindow(pix_data_sqrt, glfwWindowpp);
+    //expand texture
+    for (int y = 0; y < WINDOW_HEIGHT * g_expand; ++y) {
+        for (int x = 0; x < WINDOW_WIDTH * g_expand; ++x) {
+            pix_data_expand[x + y * WINDOW_WIDTH * g_expand] = pix_data_sqrt[(int)(x / g_expand) + (int)(y / g_expand) * WINDOW_WIDTH];
+        }
+    }
+
+    UpdateWindow(pix_data_expand, glfwWindowpp);
 
     const float dtMS = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - p).count());
     std::cout << dtMS << "ms (" << (int)(1000.0 / dtMS) << "FPS)" << std::endl;
