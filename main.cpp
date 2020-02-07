@@ -16,13 +16,13 @@
 
 constexpr int WINDOW_WIDTH = 1920;
 constexpr int WINDOW_HEIGHT = 1080;
-constexpr double g_size = 1.0;
+constexpr double g_size = 0.5;
 constexpr int fullScreen = false;
 const double screen_distance = 0.2f;
 
 constexpr float FLOAT_INFINITY = std::numeric_limits<float>::max();
 
-int InitWindow(std::array<RGBA, (int)(WINDOW_WIDTH * WINDOW_HEIGHT )>& pix_data, GLFWwindow** window) {
+int InitWindow(std::array<RGBA, (int)(WINDOW_WIDTH * WINDOW_HEIGHT)>& pix_data, GLFWwindow** window) {
 	// GLFWの初期化
 	if (!glfwInit()) {
 		return 0;
@@ -36,7 +36,7 @@ int InitWindow(std::array<RGBA, (int)(WINDOW_WIDTH * WINDOW_HEIGHT )>& pix_data,
 		monitorTarget = glfwGetPrimaryMonitor();
 
 
-	*window = glfwCreateWindow(WINDOW_WIDTH , WINDOW_HEIGHT , "RayTracing", monitorTarget, NULL);
+	*window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "RayTracing", monitorTarget, NULL);
 	if (!window) {
 		glfwTerminate();
 		return 0;
@@ -84,11 +84,56 @@ vec3 color(const ray& r, hittable* world, int depth) {
 	}
 }
 
+hittable* random_scene() {
+	int n = 50000;
+	hittable** list = new hittable * [n + 1];
+	list[0] = new sphere(vec3(0, -1000, 0), 1000, new lambertian(vec3(0,0.6,0.3)));
+	int i = 1;
+	for (int a = -10; a < 10; a++) {
+		for (int b = -10; b < 10; b++) {
+			float choose_mat = random_double();
+			vec3 center(a + 0.9 * random_double(), 0.2, b + 0.9 * random_double());
+			if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
+				if (choose_mat < 0.8) {  // diffuse
+					list[i++] = new moving_sphere(
+						center,
+						center + vec3(0, 0.5 * random_double(), 0),
+						0.0, 1.0, 0.2,
+						new lambertian(
+							vec3(random_double() * random_double(),
+								 random_double() * random_double(),
+								 random_double() * random_double())
+						)
+					);
+				} else if (choose_mat < 0.95) { // metal
+					list[i++] = new sphere(
+						center, 0.2,
+						new metal(
+							vec3(0.5 * (1 + random_double()),
+								 0.5 * (1 + random_double()),
+								 0.5 * (1 + random_double())),
+							0.5 * random_double()
+						)
+					);
+				} else {  // glass
+					//list[i++] = new sphere(center, 0.2, new dielectric(1.5));
+				}
+			}
+		}
+	}
+
+	//list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
+	list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
+	list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
+
+	return new hittable_list(list, i);
+}
+
 int main() {
 	const int sample_width = WINDOW_WIDTH * g_size;
 	const int sample_height = WINDOW_HEIGHT * g_size;
-	std::array<vec3, sample_width*sample_height> pix_data{};
-	std::array<RGBA, sample_width*sample_height> pix_data_sqrt{};
+	std::array<vec3, sample_width * sample_height> pix_data{};
+	std::array<RGBA, sample_width * sample_height> pix_data_sqrt{};
 	std::array<RGBA, WINDOW_WIDTH * WINDOW_HEIGHT> pix_data_expand{};
 	GLFWwindow* glfWindowp = nullptr;
 	GLFWwindow** glfwWindowpp = &glfWindowp;
@@ -98,19 +143,15 @@ int main() {
 
 	const int ns = 1;
 	int samples = 0;
-	vec3 lookfrom(3, 3, 2);
-	vec3 lookat(0, 0, -1);
-	float dist_to_focus = (lookfrom - lookat).length();
-	float aperture = 1.0;
+	vec3 lookfrom(13, 3, 2);
+	vec3 lookat(0, 0, 0);
+	float dist_to_focus = 10;
+	float aperture = 0.0;
 
-	camera cam(lookfrom, lookat, vec3(0, 1, 0), 20, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture, dist_to_focus);
-	hittable* list[5];
-	list[0] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-	list[1] = new sphere(vec3(0, 0, -1), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
-	list[2] = new sphere(vec3(1, 0, -1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.7));
-	list[3] = new sphere(vec3(-1, 0, -1), 0.5, new metal(vec3(1.0, 1.0, 1.0), 0.0));
-	list[4] = new sphere(vec3(0, 0, 1), 0.5, new metal(vec3(1.0, 1.0, 1.0), 0.0));
-	hittable* world = new hittable_list(list, 5);
+	camera cam(
+		lookfrom, lookat, vec3(0, 1, 0), 20, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture,
+		dist_to_focus, 0.0, 1.0);
+	hittable* world = random_scene();
 
 	while (!glfwWindowShouldClose(*glfwWindowpp)) {
 		p = std::chrono::system_clock::now();
@@ -141,7 +182,7 @@ int main() {
 		//expand texture
 		for (int y = 0; y < WINDOW_HEIGHT; ++y) {
 			for (int x = 0; x < WINDOW_WIDTH; ++x) {
-				pix_data_expand[x + y * WINDOW_WIDTH] = pix_data_sqrt[(int)(x *g_size) + (int)(y *g_size) * sample_width];
+				pix_data_expand[x + y * WINDOW_WIDTH] = pix_data_sqrt[(int)(x * g_size) + (int)(y * g_size) * sample_width];
 			}
 		}
 
