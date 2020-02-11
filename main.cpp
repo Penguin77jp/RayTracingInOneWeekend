@@ -13,6 +13,7 @@
 #include "sphere.h"
 #include "camera.h"
 #include "random.h"
+#include "polygon.h"
 
 constexpr int WINDOW_WIDTH = 1920;
 constexpr int WINDOW_HEIGHT = 1080;
@@ -84,51 +85,6 @@ vec3 color(const ray& r, hittable* world, int depth) {
 	}
 }
 
-hittable* random_scene() {
-	int n = 50000;
-	hittable** list = new hittable * [n + 1];
-	list[0] = new sphere(vec3(0, -1000, 0), 1000, new lambertian(vec3(0,0.6,0.3)));
-	int i = 1;
-	for (int a = -10; a < 10; a++) {
-		for (int b = -10; b < 10; b++) {
-			float choose_mat = random_double();
-			vec3 center(a + 0.9 * random_double(), 0.2, b + 0.9 * random_double());
-			if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
-				if (choose_mat < 0.8) {  // diffuse
-					list[i++] = new moving_sphere(
-						center,
-						center + vec3(0, 0.5 * random_double(), 0),
-						0.0, 1.0, 0.2,
-						new lambertian(
-							vec3(random_double() * random_double(),
-								 random_double() * random_double(),
-								 random_double() * random_double())
-						)
-					);
-				} else if (choose_mat < 0.95) { // metal
-					list[i++] = new sphere(
-						center, 0.2,
-						new metal(
-							vec3(0.5 * (1 + random_double()),
-								 0.5 * (1 + random_double()),
-								 0.5 * (1 + random_double())),
-							0.5 * random_double()
-						)
-					);
-				} else {  // glass
-					//list[i++] = new sphere(center, 0.2, new dielectric(1.5));
-				}
-			}
-		}
-	}
-
-	//list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
-	list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
-	list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
-
-	return new hittable_list(list, i);
-}
-
 int main() {
 	const int sample_width = WINDOW_WIDTH * g_size;
 	const int sample_height = WINDOW_HEIGHT * g_size;
@@ -143,15 +99,19 @@ int main() {
 
 	const int ns = 1;
 	int samples = 0;
-	vec3 lookfrom(13, 3, 2);
-	vec3 lookat(0, 0, 0);
+	vec3 lookfrom(0, 2, 2);
+	vec3 lookat(0, 0, -1);
 	float dist_to_focus = 10;
 	float aperture = 0.0;
 
 	camera cam(
-		lookfrom, lookat, vec3(0, 1, 0), 20, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture,
+		lookfrom, lookat, vec3(0, 1, 0), 90, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture,
 		dist_to_focus, 0.0, 1.0);
-	hittable* world = random_scene();
+  hittable* list[3];
+  list[0] = new sphere(vec3(0, 0, -1), 0,new lambertian(vec3(0.5,0.5,0)));
+  list[1] = new polygon(vec3(0, 1, -1),vec3(1,1,-1),vec3(0.5,2,-1),new lambertian(vec3(1,0,0)));
+  list[2] = new sphere(vec3(0, -100.5, -1), 0,new lambertian(vec3(0.5,0,0)));
+  hittable* world = new hittable_list(list, 3);
 
 	while (!glfwWindowShouldClose(*glfwWindowpp)) {
 		p = std::chrono::system_clock::now();

@@ -175,6 +175,7 @@
     <ClInclude Include="hittable.h" />
     <ClInclude Include="hittablelist.h" />
     <ClInclude Include="material.h" />
+    <ClInclude Include="matrix.h" />
     <ClInclude Include="polygon.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="ray.h" />
