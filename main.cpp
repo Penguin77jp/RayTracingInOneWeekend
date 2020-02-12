@@ -108,7 +108,7 @@ int main() {
 	camera cam(
 		lookfrom, lookat, vec3(0, 1, 0), 20, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture,
 		dist_to_focus, 0.0, 1.0);
-  mesh mesh_data("tree.obj",0.1);
+  mesh mesh_data("cube.obj",1.0);
   hittable_vector hittableVec;
   hittableVec.AddHittable(mesh_data);
   hittable* world_vector = &hittableVec;

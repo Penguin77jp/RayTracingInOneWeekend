@@ -54,6 +54,14 @@ public:
 					posi.push_back(vertex[tmpVec[3] - 1]);
 					posi.push_back(vertex[tmpVec[0] - 1]);
 				}
+				posi.push_back(vertex[tmpVec[0] - 1]);
+				posi.push_back(vertex[tmpVec[1] - 1]);
+				posi.push_back(vertex[tmpVec[2] - 1]);
+				for (int i = 2; i+1 < tmpVec.size(); ++i) {
+					posi.push_back(vertex[tmpVec[i] - 1]);
+					posi.push_back(vertex[tmpVec[i+1] - 1]);
+					posi.push_back(vertex[tmpVec[0] - 1]);
+				}
 				//posi
 				for (int i = 0; i < posi.size(); ++i) {
 					posi[i] *= size;
