@@ -35,6 +35,7 @@ bool polygon::hit(const ray& r, float tmin, float tmax, hit_record& rec) const {
   if (tmin < t && t < tmax) {
     if (0.0 <= v && v <= 1.0 && 0.0 <= u && u <= 1.0 && 0.0 <= u + v && u + v <= 1.0) {
       rec.t = t;
+      rec.normal = unit_vector(cross(v1 - v0, v2 - v0));
       rec.p = r.point_at_parameter(rec.t);
       rec.mat_ptr = mat_ptr;
       return true;

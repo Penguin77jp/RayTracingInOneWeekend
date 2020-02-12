@@ -14,10 +14,11 @@
 #include "camera.h"
 #include "random.h"
 #include "polygon.h"
+#include "mesh.h"
 
 constexpr int WINDOW_WIDTH = 1920;
 constexpr int WINDOW_HEIGHT = 1080;
-constexpr double g_size = 0.5;
+constexpr double g_size = 0.25;
 constexpr int fullScreen = false;
 const double screen_distance = 0.2f;
 
@@ -99,19 +100,19 @@ int main() {
 
 	const int ns = 1;
 	int samples = 0;
-	vec3 lookfrom(0, 2, 2);
+	vec3 lookfrom(1, 2, 5);
 	vec3 lookat(0, 0, -1);
 	float dist_to_focus = 10;
 	float aperture = 0.0;
 
 	camera cam(
-		lookfrom, lookat, vec3(0, 1, 0), 90, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture,
+		lookfrom, lookat, vec3(0, 1, 0), 20, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture,
 		dist_to_focus, 0.0, 1.0);
-  hittable* list[3];
-  list[0] = new sphere(vec3(0, 0, -1), 0,new lambertian(vec3(0.5,0.5,0)));
-  list[1] = new polygon(vec3(0, 1, -1),vec3(1,1,-1),vec3(0.5,2,-1),new lambertian(vec3(1,0,0)));
-  list[2] = new sphere(vec3(0, -100.5, -1), 0,new lambertian(vec3(0.5,0,0)));
-  hittable* world = new hittable_list(list, 3);
+  mesh mesh_data("test.obj");
+  hittable_vector hittableVec;
+  hittableVec.AddHittable(mesh_data);
+  hittable* world_vector = &hittableVec;
+
 
 	while (!glfwWindowShouldClose(*glfwWindowpp)) {
 		p = std::chrono::system_clock::now();
@@ -126,7 +127,7 @@ int main() {
 					float u = float(x + random_double()) / float(sample_width);
 					float v = float(y + random_double()) / float(sample_height);
 					ray r = cam.get_ray(u, v);
-					col += color(r, world, 0);
+					col += color(r, world_vector, 0);
 				}
 				const int samples_n = samples / ns;
 				pix_data[index][0] = 1.0 * (samples_n - 1) / samples_n * pix_data[index][0] + 1.0 / samples_n / ns * col[0];
