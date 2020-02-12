@@ -101,14 +101,14 @@ int main() {
 	const int ns = 1;
 	int samples = 0;
 	vec3 lookfrom(1, 2, 5);
-	vec3 lookat(0, 0, -1);
+	vec3 lookat(0, 0.5, 0);
 	float dist_to_focus = 10;
 	float aperture = 0.0;
 
 	camera cam(
 		lookfrom, lookat, vec3(0, 1, 0), 20, float(WINDOW_WIDTH) / float(WINDOW_HEIGHT), aperture,
 		dist_to_focus, 0.0, 1.0);
-  mesh mesh_data("test.obj");
+  mesh mesh_data("tree.obj",0.1);
   hittable_vector hittableVec;
   hittableVec.AddHittable(mesh_data);
   hittable* world_vector = &hittableVec;
