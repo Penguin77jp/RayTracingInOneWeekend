@@ -18,7 +18,7 @@
 
 constexpr int WINDOW_WIDTH = 1920 * 0.5;
 constexpr int WINDOW_HEIGHT = 1080 * 0.5;
-constexpr double g_size = 1.0;
+constexpr double g_size = 0.5;
 constexpr int fullScreen = false;
 const double screen_distance = 0.2f;
 

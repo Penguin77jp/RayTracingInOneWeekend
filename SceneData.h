@@ -6,6 +6,7 @@
 #include "rectangle.h"
 #include "material.h"
 #include "texture.h"
+#include "box.h"
 
 /*
 hittable* simple_light() {
@@ -48,7 +49,7 @@ hittable* random_scene() {
 }
 */
 
-hittable* cornell_box() {
+hittable* cornell_box_simple() {
 	hittable** list = new hittable * [6];
 	int i = 0;
 	material* red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
@@ -62,6 +63,26 @@ hittable* cornell_box() {
 	list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
 	list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
 	list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+
+	return new hittable_list(list, i);
+}
+
+hittable* cornell_box() {
+	hittable** list = new hittable * [8];
+	int i = 0;
+	material* red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
+	material* white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
+	material* green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
+	material* light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
+
+	list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+	list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
+	list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
+	list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+	list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+	list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+	list[i++] = new box(vec3(130, 0, 65), vec3(295, 165, 230), white);
+	list[i++] = new box(vec3(265, 0, 295), vec3(430, 330, 460), white);
 
 	return new hittable_list(list, i);
 }

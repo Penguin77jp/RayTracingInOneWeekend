@@ -171,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aabb.h" />
+    <ClInclude Include="box.h" />
     <ClInclude Include="bvh.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="color.h" />
