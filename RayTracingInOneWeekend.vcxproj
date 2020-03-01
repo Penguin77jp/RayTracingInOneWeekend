@@ -179,7 +179,10 @@
     <ClInclude Include="material.h" />
     <ClInclude Include="random.h" />
     <ClInclude Include="ray.h" />
+    <ClInclude Include="rectangle.h" />
+    <ClInclude Include="SceneData.h" />
     <ClInclude Include="sphere.h" />
+    <ClInclude Include="texture.h" />
     <ClInclude Include="vec3.h" />
   </ItemGroup>
   <ItemGroup>
