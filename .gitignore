@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# ignore movie file
+*.mp4
+*.avi
+
 # User-specific files
 *.rsuser
 *.suo
@@ -17,12 +21,12 @@
 mono_crash.*
 
 # Build results
-[Dd]ebug/
+#[Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-x64/
-x86/
+#x64/
+#x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/

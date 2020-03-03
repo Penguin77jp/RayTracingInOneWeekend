@@ -7,7 +7,7 @@
 #include "material.h"
 #include "aabb.h"
 
-class materal;
+class material;
 
 inline void get_sphere_uv(const vec3& p, float& u, float& v) {
     float phi = atan2(p.z(), p.x());
