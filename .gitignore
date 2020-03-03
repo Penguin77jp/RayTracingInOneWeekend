@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# ignore movie file
+*.mp4
+*.avi
+
 # User-specific files
 *.rsuser
 *.suo
